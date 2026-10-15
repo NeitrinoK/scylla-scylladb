@@ -591,16 +591,6 @@ private:
             lang_config.lua.max_bytes = cfg->user_defined_function_allocation_limit_bytes();
             lang_config.lua.max_contiguous = cfg->user_defined_function_contiguous_allocation_limit_bytes();
             lang_config.lua.timeout = std::chrono::milliseconds(cfg->user_defined_function_time_limit_ms());
-            if (cfg->enable_user_defined_functions() && cfg->check_experimental(db::experimental_features_t::feature::UDF)) {
-                lang_config.wasm = lang::manager::wasm_config {
-                    .udf_memory_limit = cfg->wasm_udf_memory_limit(),
-                    .cache_size = dbcfg.available_memory * cfg->wasm_cache_memory_fraction(),
-                    .cache_instance_size = cfg->wasm_cache_instance_size_limit(),
-                    .cache_timer_period = std::chrono::milliseconds(cfg->wasm_cache_timeout_in_ms()),
-                    .yield_fuel = cfg->wasm_udf_yield_fuel(),
-                    .total_fuel = cfg->wasm_udf_total_fuel(),
-                };
-            }
 
             _lang_manager.start(lang_config).get();
             auto stop_lang_manager = defer([this] { _lang_manager.stop().get(); });

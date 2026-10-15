@@ -631,7 +631,6 @@ To start the scylla server proper, simply invoke as: scylla server (or just scyl
     // We need to have the entire app config to run the app, but we need to
     // run the app to read the config file with UDF specific options so that
     // we know whether we need to reserve additional memory for UDFs.
-    app_cfg.reserve_additional_memory_per_shard = db::config::wasm_udf_reserved_memory;
     app_template app(std::move(app_cfg));
 
     auto ext = std::make_shared<db::extensions>();
@@ -1123,16 +1122,6 @@ To start the scylla server proper, simply invoke as: scylla server (or just scyl
             lang_config.lua.max_bytes = cfg->user_defined_function_allocation_limit_bytes();
             lang_config.lua.max_contiguous = cfg->user_defined_function_contiguous_allocation_limit_bytes();
             lang_config.lua.timeout = std::chrono::milliseconds(cfg->user_defined_function_time_limit_ms());
-            if (cfg->enable_user_defined_functions() && cfg->check_experimental(db::experimental_features_t::feature::UDF)) {
-                lang_config.wasm = lang::manager::wasm_config {
-                    .udf_memory_limit = cfg->wasm_udf_memory_limit(),
-                    .cache_size = dbcfg.available_memory * cfg->wasm_cache_memory_fraction(),
-                    .cache_instance_size = cfg->wasm_cache_instance_size_limit(),
-                    .cache_timer_period = std::chrono::milliseconds(cfg->wasm_cache_timeout_in_ms()),
-                    .yield_fuel = cfg->wasm_udf_yield_fuel(),
-                    .total_fuel = cfg->wasm_udf_total_fuel(),
-                };
-            }
 
             static sharded<lang::manager> langman;
             langman.start(lang_config).get();

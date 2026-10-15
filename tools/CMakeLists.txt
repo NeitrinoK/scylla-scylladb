@@ -44,8 +44,6 @@ execute_process(
 build_submodule(python3 python3
   --packages
   "${python3_dependencies}"
-  --pip-packages
-  "${pip_dependencies}"
   --pip-symlinks
   "${pip_symlinks}")
 

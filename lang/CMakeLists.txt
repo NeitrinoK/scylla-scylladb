@@ -2,10 +2,7 @@ add_library(lang STATIC)
 target_sources(lang
   PRIVATE
     manager.cc
-    lua.cc
-    wasm.cc
-    wasm_alien_thread_runner.cc
-    wasm_instance_cache.cc)
+    lua.cc)
 target_include_directories(lang
   PUBLIC
     ${CMAKE_SOURCE_DIR}
@@ -13,7 +10,6 @@ target_include_directories(lang
     ${LUA_INCLUDE_DIR})
 target_link_libraries(lang
   PUBLIC
-    wasmtime_bindings
     Seastar::seastar
     xxHash::xxhash
   PRIVATE

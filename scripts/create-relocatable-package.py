@@ -172,15 +172,6 @@ ar.reloc_add('api')
 ar.reloc_add('tools/scyllatop')
 ar.reloc_add('scylla-gdb.py')
 ar.reloc_add('bin/nodetool')
-ar.reloc_add(args.debian_dir, arcname='debian')
-node_exporter_dir = args.node_exporter_dir
-if args.stripped:
-    ar.reloc_add(f'{node_exporter_dir}', arcname='node_exporter')
-    ar.reloc_add(f'{node_exporter_dir}/node_exporter.stripped', arcname='node_exporter/node_exporter')
-else:
-    ar.reloc_add(f'{node_exporter_dir}/node_exporter', arcname='node_exporter/node_exporter')
-ar.reloc_add(f'{node_exporter_dir}/LICENSE', arcname='node_exporter/LICENSE')
-ar.reloc_add(f'{node_exporter_dir}/NOTICE', arcname='node_exporter/NOTICE')
 ar.reloc_add('ubsan-suppressions.supp')
 ar.reloc_add('fix_system_distributed_tables.py')
 

@@ -13,6 +13,9 @@ print_usage() {
 DIST=0
 RELOC_PKG=build/release/scylla-package.tar.gz
 BUILDDIR=build/redhat
+
+exit 0
+
 while [ $# -gt 0 ]; do
     case "$1" in
         "--dist")
