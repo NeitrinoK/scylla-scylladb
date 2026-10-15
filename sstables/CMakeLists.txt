@@ -26,7 +26,6 @@ target_include_directories(sstables
 target_link_libraries(sstables
   PUBLIC
     idl
-    wasmtime_bindings
     Seastar::seastar
     xxHash::xxhash
   PRIVATE

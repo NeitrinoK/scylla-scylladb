@@ -553,7 +553,6 @@ scylla_tests = set([
     'test/boost/reusable_buffer_test',
     'test/boost/role_manager_test',
     'test/boost/row_cache_test',
-    'test/boost/rust_test',
     'test/boost/s3_test',
     'test/boost/schema_change_test',
     'test/boost/schema_changes_test',
@@ -603,8 +602,6 @@ scylla_tests = set([
     'test/boost/virtual_reader_test',
     'test/boost/virtual_table_mutation_source_test',
     'test/boost/virtual_table_test',
-    'test/boost/wasm_alloc_test',
-    'test/boost/wasm_test',
     'test/boost/wrapping_interval_test',
     'test/manual/ec2_snitch_test',
     'test/manual/enormous_table_scan_test',
@@ -661,19 +658,6 @@ raft_tests = set([
     'test/raft/failure_detector_test',
 ])
 
-wasms = set([
-    'wasm/return_input.wat',
-    'wasm/test_complex_null_values.wat',
-    'wasm/test_fib_called_on_null.wat',
-    'wasm/test_functions_with_frozen_types.wat',
-    'wasm/test_mem_grow.wat',
-    'wasm/test_pow.wat',
-    'wasm/test_short_ints.wat',
-    'wasm/test_types_with_and_without_nulls.wat',
-    'wasm/test_UDA_final.wat',
-    'wasm/test_UDA_scalar.wat',
-    'wasm/test_word_double.wat',
-])
 
 apps = set([
     'scylla',
@@ -685,7 +669,7 @@ other = set([
     'iotune',
 ])
 
-all_artifacts = apps | tests | other | wasms
+all_artifacts = apps | tests | other
 
 arg_parser = argparse.ArgumentParser('Configure scylla', add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 arg_parser.add_argument('--out', dest='buildfile', action='store', default='build.ninja',
@@ -1493,8 +1477,6 @@ deps['test/boost/exceptions_fallback_test'] = ['test/boost/exceptions_fallback_t
 
 deps['test/boost/duration_test'] += ['test/lib/exception_utils.cc']
 deps['test/boost/schema_loader_test'] += ['tools/schema_loader.cc', 'tools/read_mutation.cc']
-deps['test/boost/rust_test'] += ['rust/inc/src/lib.rs']
-
 deps['test/boost/group0_cmd_merge_test'] += ['test/lib/expr_test_utils.cc']
 
 deps['test/raft/replication_test'] = ['test/raft/replication_test.cc', 'test/raft/replication.cc', 'test/raft/helpers.cc'] + scylla_raft_dependencies
@@ -1511,21 +1493,6 @@ deps['test/raft/discovery_test'] =  ['test/raft/discovery_test.cc',
                                      'test/raft/helpers.cc',
                                      'test/lib/log.cc',
                                      'service/raft/discovery.cc'] + scylla_raft_dependencies
-
-wasm_deps = {}
-
-wasm_deps['wasm/return_input.wat'] = 'test/resource/wasm/rust/return_input.rs'
-wasm_deps['wasm/test_short_ints.wat'] = 'test/resource/wasm/rust/test_short_ints.rs'
-wasm_deps['wasm/test_complex_null_values.wat'] = 'test/resource/wasm/rust/test_complex_null_values.rs'
-wasm_deps['wasm/test_functions_with_frozen_types.wat'] = 'test/resource/wasm/rust/test_functions_with_frozen_types.rs'
-wasm_deps['wasm/test_types_with_and_without_nulls.wat'] = 'test/resource/wasm/rust/test_types_with_and_without_nulls.rs'
-
-wasm_deps['wasm/test_fib_called_on_null.wat'] = 'test/resource/wasm/c/test_fib_called_on_null.c'
-wasm_deps['wasm/test_mem_grow.wat'] = 'test/resource/wasm/c/test_mem_grow.c'
-wasm_deps['wasm/test_pow.wat'] = 'test/resource/wasm/c/test_pow.c'
-wasm_deps['wasm/test_UDA_final.wat'] = 'test/resource/wasm/c/test_UDA_final.c'
-wasm_deps['wasm/test_UDA_scalar.wat'] = 'test/resource/wasm/c/test_UDA_scalar.c'
-wasm_deps['wasm/test_word_double.wat'] = 'test/resource/wasm/c/test_word_double.c'
 
 
 def get_warning_options(cxx):
@@ -1954,25 +1921,6 @@ def write_build_file(f,
             command = reloc/build_deb.sh --reloc-pkg $in --builddir $out
         rule unified
             command = unified/build_unified.sh --build-dir $builddir/$mode --unified-pkg $out
-        rule rust_header
-            command = cxxbridge --include rust/cxx.h --header $in > $out
-            description = RUST_HEADER $out
-        rule rust_source
-            command = cxxbridge --include rust/cxx.h $in > $out
-            description = RUST_SOURCE $out
-        rule cxxbridge_header
-            command = cxxbridge --header > $out
-        rule c2wasm
-            command = clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry $in -o $out
-            description = C2WASM $out
-        rule rust2wasm
-            command = cargo build --target=wasm32-wasi --example=$example --locked --manifest-path=test/resource/wasm/rust/Cargo.toml --target-dir=$builddir/wasm/ $
-                && wasm-opt -Oz $builddir/wasm/wasm32-wasi/debug/examples/$example.wasm -o $builddir/wasm/$example.wasm $
-                && wasm-strip $builddir/wasm/$example.wasm
-            description = RUST2WASM $out
-        rule wasm2wat
-            command = wasm2wat $in > $out
-            description = WASM2WAT $out
         ''').format(configure_args=configure_args,
                     outdir=outdir,
                     cxx=args.cxx,
@@ -1988,16 +1936,6 @@ def write_build_file(f,
                     ninja=ninja,
                     ragel_exec=args.ragel_exec))
 
-    for binary in sorted(wasms):
-        src = wasm_deps[binary]
-        wasm = binary[:-4] + '.wasm'
-        if src.endswith('.rs'):
-            f.write(f'build $builddir/{wasm}: rust2wasm {src} | test/resource/wasm/rust/Cargo.lock test/resource/wasm/rust/build.rs\n')
-            example_name = binary[binary.rindex('/')+1:-4]
-            f.write(f'   example = {example_name}\n')
-        else:
-            f.write(f'build $builddir/{wasm}: c2wasm {src}\n')
-        f.write(f'build $builddir/{binary}: wasm2wat $builddir/{wasm}\n')
 
     for mode in build_modes:
         modeval = modes[mode]
@@ -2054,16 +1992,11 @@ def write_build_file(f,
               command = ./test.py --mode={mode} --repeat={test_repeat} --timeout={test_timeout}
               pool = console
               description = TEST {mode}
-            rule rust_lib.{mode}
-              command = CARGO_BUILD_DEP_INFO_BASEDIR='.' cargo build --locked --manifest-path=rust/Cargo.toml --target-dir=$builddir/{mode} --profile=rust-{mode} $
-                        && touch $out
-              description = RUST_LIB $out
             ''').format(mode=mode, antlr3_exec=args.antlr3_exec, fmt_lib=fmt_lib, test_repeat=args.test_repeat, test_timeout=args.test_timeout, **modeval))
         f.write(
-            'build {mode}-build: phony {artifacts} {wasms}\n'.format(
+            'build {mode}-build: phony {artifacts}\n'.format(
                 mode=mode,
-                artifacts=str.join(' ', ['$builddir/' + mode + '/' + x for x in sorted(build_artifacts - wasms)]),
-                wasms = str.join(' ', ['$builddir/' + x for x in sorted(build_artifacts & wasms)]),
+                artifacts=str.join(' ', ['$builddir/' + mode + '/' + x for x in sorted(build_artifacts)]),
             )
         )
         include_cxx_target = f'{mode}-build' if not args.dist_only else ''
@@ -2074,32 +2007,23 @@ def write_build_file(f,
         serializers = {}
         ragels = {}
         antlr3_grammars = set()
-        rust_headers = {}
         seastar_lib_ext = 'so' if modeval['build_seastar_shared_libs'] else 'a'
         seastar_dep = f'$builddir/{mode}/seastar/libseastar.{seastar_lib_ext}'
         seastar_testing_dep = f'$builddir/{mode}/seastar/libseastar_testing.{seastar_lib_ext}'
         abseil_dep = ' '.join(f'$builddir/{mode}/abseil/{lib}' for lib in abseil_libs)
         for binary in sorted(build_artifacts):
-            if binary in other or binary in wasms:
+            if binary in other:
                 continue
             srcs = deps[binary]
             objs = ['$builddir/' + mode + '/' + src.replace('.cc', '.o')
                     for src in srcs
                     if src.endswith('.cc')]
             objs.append('$builddir/../utils/arch/powerpc/crc32-vpmsum/crc32.S')
-            has_rust = False
             for dep in deps[binary]:
                 if isinstance(dep, Antlr3Grammar):
                     objs += dep.objects(f'$builddir/{mode}/gen')
                 if isinstance(dep, Json2Code):
                     objs += dep.objects(f'$builddir/{mode}/gen')
-                if dep.endswith('.rs'):
-                    has_rust = True
-                    idx = dep.rindex('/src/')
-                    obj = dep[:idx].replace('rust/','') + '.o'
-                    objs.append(f'$builddir/{mode}/gen/rust/{obj}')
-            if has_rust:
-                objs.append(f'$builddir/{mode}/rust-{mode}/librust_combined.a')
             local_libs = f'$seastar_libs_{mode} $libs'
             objs.extend([f'$builddir/{mode}/abseil/{lib}' for lib in abseil_libs])
             if binary in tests:
@@ -2140,10 +2064,6 @@ def write_build_file(f,
                     ragels[hh] = src
                 elif src.endswith('.g'):
                     antlr3_grammars.add(src)
-                elif src.endswith('.rs'):
-                    idx = src.rindex('/src/')
-                    hh = '$builddir/' + mode + '/gen/' + src[:idx] + '.hh'
-                    rust_headers[hh] = src
                 else:
                     raise Exception('No rule for ' + src)
         f.write(
@@ -2162,10 +2082,9 @@ def write_build_file(f,
         )
 
         f.write(
-            'build {mode}-test: test.{mode} {test_executables} $builddir/{mode}/scylla {wasms}\n'.format(
+            'build {mode}-test: test.{mode} {test_executables} $builddir/{mode}/scylla\n'.format(
                 mode=mode,
                 test_executables=' '.join(['$builddir/{}/{}'.format(mode, binary) for binary in sorted(tests)]),
-                wasms=' '.join([f'$builddir/{binary}' for binary in sorted(wasms)]),
             )
         )
         f.write(
@@ -2193,8 +2112,6 @@ def write_build_file(f,
             gen_headers += g.headers('$builddir/{}/gen'.format(mode))
         gen_headers += list(serializers.keys())
         gen_headers += list(ragels.keys())
-        gen_headers += list(rust_headers.keys())
-        gen_headers.append('$builddir/{}/gen/rust/cxx.h'.format(mode))
         gen_headers_dep = ' '.join(gen_headers)
 
         for obj in compiles:
@@ -2215,16 +2132,6 @@ def write_build_file(f,
         for hh in ragels:
             src = ragels[hh]
             f.write('build {}: ragel {}\n'.format(hh, src))
-        for hh in rust_headers:
-            src = rust_headers[hh]
-            f.write('build {}: rust_header {}\n'.format(hh, src))
-            cc = hh.replace('.hh', '.cc')
-            f.write('build {}: rust_source {}\n'.format(cc, src))
-            obj = cc.replace('.cc', '.o')
-            f.write('build {}: cxx.{} {} || {}\n'.format(obj, mode, cc, gen_headers_dep))
-        f.write('build {}: cxxbridge_header\n'.format('$builddir/{}/gen/rust/cxx.h'.format(mode)))
-        librust = '$builddir/{}/rust-{}/librust_combined'.format(mode, mode)
-        f.write('build {}.a: rust_lib.{} rust/Cargo.lock\n  depfile={}.d\n'.format(librust, mode, librust))
         for grammar in antlr3_grammars:
             outs = ' '.join(grammar.generated('$builddir/{}/gen'.format(mode)))
             f.write('build {}: antlr3.{} {}\n  stem = {}\n'.format(outs, mode, grammar.source,
@@ -2316,9 +2223,6 @@ def write_build_file(f,
     )
     f.write(
             'build check: phony {}\n'.format(' '.join(['{mode}-check'.format(mode=mode) for mode in default_modes]))
-    )
-    f.write(
-            'build wasm: phony {}\n'.format(' '.join([f'$builddir/{binary}' for binary in sorted(wasms)]))
     )
     f.write(
             'build compiler-training: phony {}\n'.format(' '.join(['{mode}-compiler-training'.format(mode=mode) for mode in default_modes]))

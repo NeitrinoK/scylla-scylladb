@@ -33,7 +33,6 @@ target_link_libraries(scylla_auth
     absl::headers
     cql3
     idl
-    wasmtime_bindings
     libxcrypt::libxcrypt)
 
 add_whole_archive(auth scylla_auth)

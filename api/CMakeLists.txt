@@ -72,7 +72,6 @@ target_include_directories(api
     ${scylla_gen_build_dir})
 target_link_libraries(api
   idl
-  wasmtime_bindings
   Seastar::seastar
   xxHash::xxhash
   absl::headers)

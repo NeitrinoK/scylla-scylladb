@@ -27,7 +27,7 @@ seastar::future<shared_ptr<functions::function>> create_function_statement::crea
     if (old && !dynamic_cast<functions::user_function*>(old)) {
         throw exceptions::invalid_request_exception(format("Cannot replace '{}' which is not a user defined function", *old));
     }
-    if (_language != "lua" && _language != "wasm") {
+    if (_language != "lua") {
         throw exceptions::invalid_request_exception(format("Language '{}' is not supported", _language));
     }
     data_type return_type = prepare_type(qp, *_return_type);

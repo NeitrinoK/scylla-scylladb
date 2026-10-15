@@ -201,7 +201,6 @@ To display the log classes (output changes with each version so your display may
    view
    view_update_generator
    virtual_tables
-   wasm
 
 Additional Information
 ----------------------

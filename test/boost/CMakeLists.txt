@@ -256,9 +256,6 @@ add_scylla_test(role_manager_test
   KIND SEASTAR)
 add_scylla_test(row_cache_test
   KIND SEASTAR)
-add_scylla_test(rust_test
-  KIND BOOST
-  LIBRARIES inc)
 add_scylla_test(s3_test
   KIND SEASTAR)
 add_scylla_test(schema_change_test
@@ -363,10 +360,6 @@ add_scylla_test(virtual_reader_test
 add_scylla_test(virtual_table_mutation_source_test
   KIND SEASTAR)
 add_scylla_test(virtual_table_test
-  KIND SEASTAR)
-add_scylla_test(wasm_alloc_test
-  KIND SEASTAR)
-add_scylla_test(wasm_test
   KIND SEASTAR)
 add_scylla_test(wrapping_interval_test
   KIND BOOST)

@@ -81,9 +81,7 @@ in derive ({
     ant
     antlr3
     boost
-    cargo
     cmake
-    cxx-rs
     gcc
     openjdk11_headless
     libtool
@@ -111,7 +109,6 @@ in derive ({
       urwid
     ]))
     ragel
-    rustc
     stow
   ] ++ (devInputs { inherit pkgs llvm; });
 

@@ -30,8 +30,6 @@ fi
 debian_base_packages=(
     clang
     gdb
-    cargo
-    wabt
     liblua5.3-dev
     python3-aiohttp
     python3-pyparsing
@@ -104,12 +102,7 @@ fedora_packages=(
     file
     dpkg-dev
     curl
-    rust
-    cargo
     rapidxml-devel
-    rust-std-static-wasm32-wasi
-    wabt
-    binaryen
     lcov
 )
 
@@ -378,8 +371,6 @@ elif [ "$ID" == "arch" ]; then
     fi
     echo -e "Configure example:\n\t./configure.py\n\tninja release"
 fi
-
-cargo --config net.git-fetch-with-cli=true install cxxbridge-cmd --root /usr/local
 
 CURL_ARGS=$(minio_download_jobs)
 if [ ! -z "${CURL_ARGS}" ]; then

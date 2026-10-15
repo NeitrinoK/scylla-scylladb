@@ -17,7 +17,6 @@ CQL Reference
    secondary-indexes
    time-to-live
    functions
-   wasm
    json
    mv
    non-reserved-keywords
